@@ -21,9 +21,15 @@ public class Booking {
 		int busNumber =  selectbus(number, database, scanner);
 		
 		String bustypeString =  availableBuses.get(busNumber).busTypeString;
-		if(bustypeString.toLowerCase().contains("sleaper")) {
-			
+		
+		Bus selectedBus;
+		if(bustypeString.toLowerCase().contains("sleeper")) {
+			selectedBus = new SleeperBus(availableBuses.get(busNumber));
+		}else {
+			selectedBus = new SeaterBus(availableBuses.get(busNumber));
 		}
+		
+		
 		
 	}
 	
