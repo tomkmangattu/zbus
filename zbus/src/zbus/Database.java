@@ -4,6 +4,7 @@ import java.sql.*;
 import java.util.ArrayList;
 
 
+
 public class Database {
 	
 	static final String DATABASE_URL = "jdbc:mysql://localhost:3306/zbus";
@@ -181,6 +182,168 @@ public class Database {
 				availableBuses.add(new Bus(idString, busTypeString, totalSeats, availableSeats));
 			}
 			return availableBuses;
+		}finally {
+			if(preparedStatement != null) {
+				preparedStatement.close();
+			}
+		}
+	}
+	
+	Bus selectFullDetailsOfBus(int busId) throws SQLException, DatabaseException{
+		final String busQueryString = """
+			select *
+			from  buses
+			where id = ?""";
+
+		
+		PreparedStatement preparedStatement = null;
+		Bus selectedBus;
+		
+		try {
+			preparedStatement = connection.prepareStatement(busQueryString);
+			preparedStatement.setInt(1, busId);
+			
+			final ResultSet resultSet = preparedStatement.executeQuery();
+			int id;
+			String busTypeString;
+			int totalSeats;
+			int seatsRight ;
+			int seatsLeft;
+			
+			if(resultSet.next()) {
+				id = resultSet.getInt(1);
+				busTypeString = resultSet.getString(2);
+				totalSeats = resultSet.getInt(3);
+				seatsRight = resultSet.getInt(4);
+				seatsLeft = resultSet.getInt(5);
+				
+				if(busTypeString.toLowerCase().contains("sleeper")) {
+					selectedBus = new SleeperBus(id, busTypeString, 
+							totalSeats, seatsLeft, seatsRight);
+				}else {
+					selectedBus = new SeaterBus(id, busTypeString, 
+							totalSeats, seatsLeft, seatsRight);
+				}
+				return selectedBus;
+			}else {
+				throw new DatabaseException("No details found for bus Id " + busId);
+			}
+		}finally {
+			if(preparedStatement != null) {
+				preparedStatement.close();
+			}
+		}
+	}
+	
+	Seats[] selectBookedSeatsOfBus(int busId, int totalSeats) throws SQLException{
+		final String bookingQueyString = """
+				select *
+				from bookings
+				where bus_id = ?""";
+		
+			
+		PreparedStatement preparedStatement = null;
+		
+		try {
+			preparedStatement = connection.prepareStatement(bookingQueyString);
+			preparedStatement.setInt(1, busId);
+			
+			final ResultSet resultSet = preparedStatement.executeQuery();
+			
+			Seats[] seats = new Seats[totalSeats];
+			int id;
+			int bookedBy;
+			int seatNo;
+			String passengerNameString;
+			char gender;
+			boolean femaleOnlyInNearBySeats;
+			
+			while(resultSet.next()) {
+				id = resultSet.getInt(1);
+				bookedBy = resultSet.getInt(2);
+				seatNo = resultSet.getInt(4);
+				passengerNameString = resultSet.getString(5);
+				gender = resultSet.getString(6).charAt(0);
+				femaleOnlyInNearBySeats = resultSet.getBoolean(7);
+				seats[seatNo -1] = new Seats(id, bookedBy, seatNo, passengerNameString, gender, femaleOnlyInNearBySeats);
+			}
+			
+			return seats;
+			
+		}finally {
+			if(preparedStatement != null) {
+				preparedStatement.close();
+			}
+		}
+		
+	}
+	
+	boolean checkIfSeatIsEmpty(int busNo, int seatNo) throws SQLException {
+		final String queryString = """
+				select *
+				from bookings
+				where bus_id = ?
+				and seat = ?;
+				""";
+		PreparedStatement preparedStatement = null;
+		try {
+			preparedStatement = connection.prepareStatement(queryString);
+			preparedStatement.setInt(1, busNo);
+			preparedStatement.setInt(2, seatNo);
+			
+			ResultSet resultSet = preparedStatement.executeQuery();
+			return ! (resultSet.next());
+		}finally {
+			if(preparedStatement != null) {
+				preparedStatement.close();
+			}
+		}
+	}
+	
+	boolean checkFemaleOnlyCondition(int busNo, int seatNo, int userId) throws SQLException{
+		final String queryString = """
+				select *
+				from bookings
+				where bus_id = ?
+				and seat = ?
+				and booked_by != ?
+				and female_only = TRUE;
+				""";
+		PreparedStatement preparedStatement = null;
+		try {
+			preparedStatement = connection.prepareStatement(queryString);
+			preparedStatement.setInt(1, busNo);
+			preparedStatement.setInt(2, seatNo);
+			preparedStatement.setInt(3, userId);
+			
+			ResultSet resultSet = preparedStatement.executeQuery();
+			
+			return resultSet.next();
+		}finally {
+			if(preparedStatement != null) {
+				preparedStatement.close();
+			}
+		}
+	}
+	
+	void bookTicket(int userId, int busId, int seat, String name, char gender, boolean coPassengerFemaleOnly) throws SQLException {
+		final String queryString = """
+				insert into bookings(booked_by, bus_id, seat, name, gender, female_only) 
+				values(?, ?, ?, ?, ?, ?)
+				""";
+		PreparedStatement preparedStatement = null;
+		try {
+			preparedStatement = connection.prepareStatement(queryString);
+			preparedStatement.setInt(1, userId);
+			preparedStatement.setInt(2, busId);
+			preparedStatement.setInt(3, seat);
+			preparedStatement.setString(4, name);
+			preparedStatement.setString(5, String.valueOf(gender));
+			preparedStatement.setBoolean(6, coPassengerFemaleOnly);
+			
+			int rowCount = preparedStatement.executeUpdate();
+			System.out.println("rows affected" + rowCount);
+			
 		}finally {
 			if(preparedStatement != null) {
 				preparedStatement.close();

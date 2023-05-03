@@ -145,7 +145,7 @@ public class Application {
 		
 	}
 	
-	static boolean mainMenu() throws InputExceptions, SQLException {
+	static boolean mainMenu() throws InputExceptions, SQLException, DatabaseException {
 		menuScreen.signedInUserActions();
 		String choiceString = scanner.nextLine();
 		int choice = 0;
@@ -156,7 +156,7 @@ public class Application {
 			return false;
 		}
 		switch(choice) {
-		case 1:	booking.startBooking(scanner, database);
+		case 1:	booking.startBooking(scanner, database, user.id);
 		break;
 		}
 		

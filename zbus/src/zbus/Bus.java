@@ -1,5 +1,7 @@
 package zbus;
 
+import java.sql.SQLException;
+
 public class Bus {
 	int id;
 	String busTypeString;
@@ -15,5 +17,19 @@ public class Bus {
 	
 	void displayAvailableSeats() {
 		System.out.println(id + " " + busTypeString + " " + (totalSeats - bookedSeats));
+	}
+	
+	
+	void displayAllSeats() {
+		System.out.println("called parent");
+	}
+	
+	void initSeats(Seats[] seats) {
+		
+	}
+	
+	void bookTicket(int busNo, int seatNo, String passengerName, 
+			char gender, boolean coPassengerOnlyFemale, Database database, int userId) throws SQLException, BookingException {
+		
 	}
 }
