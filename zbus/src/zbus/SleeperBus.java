@@ -6,16 +6,18 @@ public class SleeperBus extends Bus {
 	int seatsRight;
 	int seatsLeft;
 	Seats[] seats;
+	int fare;
 
-	public SleeperBus(int id, String busTypeString, int totalSeats, int seatsLeft, int seatsRight) {
-		super(id, busTypeString, totalSeats, 0);
+	public SleeperBus(int id, String busTypeString, int totalSeats, int seatsLeft, int seatsRight, int fare) {
+		super(id, busTypeString, totalSeats, 0, fare);
 		this.seatsLeft = seatsLeft;
 		this.seatsRight = seatsRight;
+		this.fare = fare;
 
 	}
 
 	public SleeperBus(Bus bus) {
-		super(bus.id, bus.busTypeString, bus.totalSeats, bus.bookedSeats);
+		super(bus.id, bus.busTypeString, bus.totalSeats, bus.bookedSeats, 0);
 	}
 
 	@Override
@@ -46,7 +48,7 @@ public class SleeperBus extends Bus {
 	}
 
 	@Override
-	void bookTicket(int busNo, int seatNo, String passengerName, char gender, boolean coPassengerOnlyFemale,
+	boolean bookTicket(int busNo, int seatNo, char gender,
 			Database database, int userId) throws SQLException, BookingException {
 
 		boolean isSeatEmpty = database.checkIfSeatIsEmpty(busNo, seatNo);
@@ -64,13 +66,13 @@ public class SleeperBus extends Bus {
 					femaleOnlyConditionPresent = database.checkFemaleOnlyCondition(busNo, seatNo + 1, userId);
 				}
 				if (!femaleOnlyConditionPresent) {
-					database.bookTicket(userId, busNo, seatNo, passengerName, gender, coPassengerOnlyFemale);
+					return true;
 				} else {
 					throw new BookingException(
 							"Sorry booking failed copassenger has choosed to only travel with female passenger");
 				}
 			} else {
-				database.bookTicket(userId, busNo, seatNo, passengerName, gender, coPassengerOnlyFemale);
+				return true;
 			}
 		} else {
 			throw new BookingException("Sorry the seat you choose is occupied");

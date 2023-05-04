@@ -32,4 +32,7 @@ public class Seats {
 		this.copassengerFemaleOnly = copassengerFemaleOnly;
 	}
 	
+	void displayInfo() {
+		System.out.format("%-5s %-10s %-5s %-10s %-5s %-10s \n", id, bookedBy, seatNo, nameString, gender, copassengerFemaleOnly);
+	}
 }

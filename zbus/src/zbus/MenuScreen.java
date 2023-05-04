@@ -10,6 +10,20 @@ public class MenuScreen {
 	
 	void signedInUserActions() {
 		System.out.println("1. Book Tickets");
-		System.out.println("2. Exit");
+		System.out.println("2. Ticket Cancellation");
+		System.out.println("3. Ticket Filtering");
+		System.out.println("4. Exit");
+	}
+	
+	void filteringOption1() {
+		System.out.println("1. AC");
+		System.out.println("2. Non AC");
+		System.out.println("3. Both");
+	}
+	
+	void filteringOption2() {
+		System.out.println("1. Seater");
+		System.out.println("2. Sleeper");
+		System.out.println("3. Both");
 	}
 }

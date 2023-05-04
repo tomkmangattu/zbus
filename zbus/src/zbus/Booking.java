@@ -5,100 +5,203 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Booking {
-	
+
 	ArrayList<Bus> availableBuses;
 	int seatsNeeded = 0;
 	Bus selectedBus;
 	int userId;
-	
-	
-	void startBooking(Scanner scanner, Database database, int userId) throws InputExceptions, SQLException, DatabaseException{
+
+	void startBooking(Scanner scanner, Database database, int userId)
+			throws InputExceptions, SQLException, DatabaseException {
 		this.userId = userId;
 		System.out.println("Enter the number of seats you want to book :");
 		String inputString = scanner.nextLine();
 		int number = 0;
 		try {
 			number = Integer.parseInt(inputString);
-		}catch (NumberFormatException e) {
+		} catch (NumberFormatException e) {
 			throw new InputExceptions("Please enter a number");
 		}
 		seatsNeeded = number;
-		
-		int busNumber =  selectbus(number, database, scanner);
-		
+
+		int busNumber = selectbus(number, database, scanner);
+
 		selectedBus = database.selectFullDetailsOfBus(busNumber);
 		selectedBus.initSeats(database.selectBookedSeatsOfBus(busNumber, selectedBus.totalSeats));
-		
+
 		bookSeats(scanner, database);
-				
+
 	}
-	
+
 	void bookSeats(Scanner scanner, Database database) throws SQLException {
 		int seatsToBeBooked = seatsNeeded;
 		String inputString;
-		int seatNo = 0;
-		String passenger;
-		char gender;
-		boolean copassengerOnlyFemale = false;
-		
+ 
+		Passenger[] passengers = new Passenger[seatsNeeded];
+		boolean canBeBooked = false;
+
 		selectedBus.displayAllSeats();
-		while(seatsToBeBooked != 0) {
-			System.out.println("remaining "  + seatsToBeBooked + " to be booked");
-			System.out.println("Enter the seat number you want to book :");
-			inputString = scanner.nextLine();
+		while (seatsToBeBooked != 0) {
+
+			canBeBooked = false;
+			System.out.println("remaining " + seatsToBeBooked + " to be booked");
+			Passenger passenger;
 			try {
-				seatNo = Integer.parseInt(inputString);
-			}catch (NumberFormatException e) {
-				System.out.println("Please enter a number");
+				passenger = getPassengerDetails(scanner);
+			} catch (InputExceptions e) {
+				System.out.println(e.getMessage());
 				continue;
 			}
-			System.out.println("Enter name of the passenger :");
-			passenger = scanner.nextLine();
-			System.out.println("Enter gender of the passenger :");
-			inputString = scanner.nextLine();
-			gender = inputString.toLowerCase().charAt(0);
-			if(gender != 'm' && gender != 'f' ) {
-				System.out.println("Gender should be m or f");
-				continue;
-			}
-			if(gender == 'f') {
-				System.out.println("Do you want to set co passenger as only female (y/n)");
-				inputString = scanner.nextLine();
-				char coPassengerCondition = inputString.toLowerCase().charAt(0);
-				if(coPassengerCondition == 'y') {
-					copassengerOnlyFemale = true;
-				}
-			}
-			
+
 			try {
-				selectedBus.bookTicket(selectedBus.id, seatNo, passenger, gender, copassengerOnlyFemale, database, userId);
-			}catch (BookingException e) {
+				canBeBooked = selectedBus.bookTicket(selectedBus.id, passenger.seat, passenger.gender, database, userId);
+			} catch (BookingException e) {
 				System.out.println(e.getMessage());
 				System.out.println("Booking failed");
 				continue;
 			}
-			
-			seatsToBeBooked--;
+			if (canBeBooked) {
+				passengers[seatsNeeded - seatsToBeBooked] = passenger;
+				seatsToBeBooked--;
+			}
+
+		}
+
+		System.out.println("Total fare will for " + seatsNeeded + " is equal to " + (seatsNeeded * selectedBus.fare));
+		System.out.println("Do you conform booking (y/n)");
+		inputString = scanner.nextLine();
+		if (inputString.toLowerCase().charAt(0) == 'y') {
+			for (int idx = 0; idx < seatsNeeded; idx++) {
+				database.bookTicket(userId, selectedBus.id, passengers[idx].seat, passengers[idx].nameString,
+						passengers[idx].gender, passengers[idx].coPassengerFemaleOnly);
+			}
+		}
+
+	}
+	
+	void cancelTickets(Scanner scanner, Database database, int userId) throws SQLException {
+		this.userId = userId;
+		ArrayList<Ticket> tickets = database.showTicketsBookedByUser(userId);
+		displayTickets(tickets);
+		System.out.println("1. Cancel all the tickets");
+		System.out.println("2. Cancel only specific tickets");
+		System.out.println("Enter your choice :");
+		
+		String inputString = scanner.nextLine();
+		int choice = 0;
+		try {
+			choice = Integer.parseInt(inputString);
+		}catch (NumberFormatException e) {
+			System.out.println("Please Enter a number");
+			return;
 		}
 		
+		switch (choice) {
+		case 1:
+			database.deleteAllTickets(userId);
+			break;
+		case 2:
+			deleteSpecificTickets(scanner, tickets, database);
+			break;
+		default:
+			break;
+		}
 	}
 	
+	void deleteSpecificTickets(Scanner scanner, ArrayList<Ticket> tickets, Database database) throws SQLException {
+		System.out.println("Enter the numbers corresponding to the ticket you have to delete (seperated by spaces)");
+		String inputString = scanner.nextLine();
+		String[] indexStrings = inputString.split(" ");
+		ArrayList<Integer> ticketIdsToDelete = new ArrayList<>();
+		int refund = 0;
+		
+		for(String indexString : indexStrings) {
+			try {
+				int index = Integer.parseInt(indexString);
+				if(index <= tickets.size()) {
+					Ticket ticketToDelete = tickets.get(index - 1);
+					
+					if(ticketToDelete.busTypeString.toLowerCase().contains("sleeper")) {
+						refund += ticketToDelete.ticketFare * 0.5;
+					}else {
+						refund += ticketToDelete.ticketFare * 0.75;
+					}
+					ticketIdsToDelete.add(tickets.get(index - 1).id);
+					
+				}
+			} catch (NumberFormatException e) {
+				System.out.println("Expected numbers not able understand " + indexString);
+			}
+		}
+		System.out.println("Refund amount is :" + refund);
+		database.deleteTickets(ticketIdsToDelete);
+		
+	}
+	
+	
+	
+	void displayTickets(ArrayList<Ticket> tickets) {
+		int idx = 0;
+		System.out.format(" %-5s %-5s %-10s %-6s %-20s %-6s %-10s \n", "No", "Id", "Bus Type", "seat No", "Passenger name", "gender", "coPassengerFemaleOnly");
+		System.out.println("-------------------------------------------------------------------");
+		for(Ticket ticket : tickets) {
+			ticket.displayTicketWithIndex(idx + 1);
+			idx ++;
+		}
+	}
+	
+	Passenger getPassengerDetails(Scanner scanner) throws InputExceptions{
+		String inputString;
+		int seatNo;
+		String passengerName;
+		char gender;
+		boolean coPassengerFemaleOnly = false;
+		
+		System.out.println("Enter the seat number you want to book :");
+		inputString = scanner.nextLine();
+		try {
+			seatNo = Integer.parseInt(inputString);
+		} catch (NumberFormatException e) {
+			throw new InputExceptions("Please enter a number");
+			
+		}
+		
+		System.out.println("Enter name of the passenger :");
+		passengerName = scanner.nextLine();
+		
+		System.out.println("Enter gender of the passenger :");
+		inputString = scanner.nextLine();
+		gender = inputString.toLowerCase().charAt(0);
+		if (gender != 'm' && gender != 'f') {
+			throw new InputExceptions("Gender should be m or f");
+			
+		}
+		if (gender == 'f') {
+			System.out.println("Do you want to set co passenger as only female (y/n)");
+			inputString = scanner.nextLine();
+			char coPassengerCondition = inputString.toLowerCase().charAt(0);
+			if (coPassengerCondition == 'y') {
+				coPassengerFemaleOnly = true;
+			}
+		}
+		
+		return new Passenger(passengerName, seatNo, gender, coPassengerFemaleOnly);
+
+	}
 
 	int selectbus(int number, Database database, Scanner scanner) throws SQLException, NumberFormatException {
-		availableBuses =  database.selectBusesWithSeatsMoreThan(number);
+		availableBuses = database.selectBusesWithSeatsMoreThan(number);
 		displayBusesWithAvailableSeats(availableBuses);
-		
+
 		System.out.println("Enter the bus number you want to book");
 		String inputString = scanner.nextLine();
-		return Integer.parseInt(inputString);	
+		return Integer.parseInt(inputString);
 	}
-	
-	
+
 	void displayBusesWithAvailableSeats(ArrayList<Bus> availableBuses) {
-		for(Bus bus: availableBuses) {
+		for (Bus bus : availableBuses) {
 			bus.displayAvailableSeats();
 		}
 	}
-	
-	
+
 }

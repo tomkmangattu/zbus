@@ -7,17 +7,19 @@ public class User {
 	long phoneNumber;
 	int age;
 	char gender;
+	String userTypeString;
 	
 	public User() {
 		
 	}
 	
-	public User(int id, String name, long phoneNumber, int age, char gender) {
+	public User(int id, String name, long phoneNumber, int age, char gender, String userTypeString) {
 		this.id = id;
 		this.name = name;
 		this.phoneNumber = phoneNumber;
 		this.age = age;
 		this.gender = gender;
+		this.userTypeString = userTypeString;
 	}
 	
 	void storeName(String name, int id) {
