@@ -71,6 +71,7 @@ public class Viewing {
 		ArrayList<Bus> busesArrayList =  database.showFilteredAndOrderedData(String.valueOf(queryString));
 		
 		int idx = 1;
+		System.out.format("%-5s %-10s %-5s\n", "No" , "Bus Type", "Available seats");
 		for(Bus bus : busesArrayList) {
 			bus.displayFilteredResults(idx ++);
 		}
@@ -116,7 +117,7 @@ public class Viewing {
 		System.out.print("Total fare collected: " + totalFareCollected);
 		System.out.format(" ( %s tickets + %s cancellation )\n", bookedSeats, cancelledTicketCount);
 		
-		System.out.format("%-5s %-10s %-5s %-10s %-5s %-10s \n", "id", "bookedBy", "seatNo", "name", "gender", "copassengerFemaleOnly");
+		System.out.format("%-5s %-10s %-5s %-10s %-5s %-10s \n", "id", "booked by", "seat No", "name", "gender", "copassenger female only");
 		for(Seats seat : bookedSeatsArrayList) {
 			seat.displayInfo();
 		}

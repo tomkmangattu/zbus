@@ -6,7 +6,6 @@ import java.util.Scanner;
 public class Application {
 
 	static boolean userSignedIn = false;
-	static MenuScreen menuScreen = new MenuScreen();
 	static Database database;
 	static User user;
 	static Scanner scanner = new Scanner(System.in);
@@ -17,9 +16,14 @@ public class Application {
 
 		String choiceString;
 
-		menuScreen.loginOrSignInScreen();
+		System.out.println("1. Sign to proceed");
+		System.out.println("2. Login to proceed");
+		System.out.println("3. Exit");
+		System.out.println("Enter your choice :");
+
 		choiceString = scanner.nextLine();
 		int choice = 0;
+
 		try {
 			choice = Integer.parseInt(choiceString);
 		} catch (NumberFormatException e) {
@@ -146,43 +150,58 @@ public class Application {
 
 	}
 
-	static boolean mainMenu() throws InputExceptions, SQLException, DatabaseException {
-		
-		System.out.println("1. Book Tickets");
-		System.out.println("2. Ticket Cancellation");
-		System.out.println("3. Ticket Filtering");
-		System.out.println("4. Log out");
-		
-		if("admin".equalsIgnoreCase(user.userTypeString)) {
-			System.out.println("5. Bus summary");
-			System.out.println("6. Exit");
-		}else {
-			System.out.println("5. Exit");
-		}
-		String choiceString = scanner.nextLine();
-		int choice = 0;
+	static boolean mainMenu() throws SQLException {
+
 		try {
-			choice = Integer.parseInt(choiceString);
-		} catch (NumberFormatException e) {
-			System.out.println("Please enter a number");
-			return false;
-		}
-		switch (choice) {
-		case 1:
-			booking.startBooking(scanner, database, user.id);
-			break;
-		case 2:
-			booking.cancelTickets(scanner, database, user.id);
-			break;
-		case 3:
-			viewing.showFilteringOptions(scanner, database);
-			break;
-		case 4: userSignedIn = false;
-			break;
-		case 5:
-			if("admin".equalsIgnoreCase(user.userTypeString)) {
-				viewing.showBusSummary(database, scanner);
+			System.out.println("1. Book Tickets");
+			System.out.println("2. Ticket Cancellation");
+			System.out.println("3. Ticket Filtering");
+			System.out.println("4. Log out");
+
+			if ("admin".equalsIgnoreCase(user.userTypeString)) {
+				System.out.println("5. Bus summary");
+				System.out.println("6. Exit");
+			} else {
+				System.out.println("5. Exit");
 			}
+			String choiceString = scanner.nextLine();
+			int choice = 0;
+			try {
+				choice = Integer.parseInt(choiceString);
+			} catch (NumberFormatException e) {
+				System.out.println("Please enter a number");
+				return false;
+			}
+			switch (choice) {
+			case 1:
+				booking.startBooking(scanner, database, user.id);
+				break;
+			case 2:
+				booking.cancelTickets(scanner, database, user.id);
+				break;
+			case 3:
+				viewing.showFilteringOptions(scanner, database);
+				break;
+			case 4:
+				userSignedIn = false;
+				break;
+			case 5:
+				if ("admin".equalsIgnoreCase(user.userTypeString)) {
+					viewing.showBusSummary(database, scanner);
+				} else {
+					return true;
+				}
+				break;
+			case 6:
+				return true;
+			default:
+				System.out.println("Please enter a value within options");
+			}
+
+		} catch (InputExceptions e) {
+			System.out.println(e.getMessage());
+		} catch (DatabaseException e) {
+			System.out.println(e.getMessage());
 		}
 
 		return false;
@@ -200,7 +219,7 @@ public class Application {
 
 			while (!exit) {
 				if (userSignedIn) {
-					mainMenu();
+					exit = mainMenu();
 				} else {
 					exit = siginOrLogin();
 				}

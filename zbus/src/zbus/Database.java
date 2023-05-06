@@ -103,7 +103,7 @@ public class Database {
 	void insertUserDetails(int id, long phoneNumber, int age, char gender) throws SQLException {
 		final String queryString = """
 				UPDATE customers
-				set phoneNumber = ?, age = ?, gender = ?
+				set phoneNumber = ?, age = ?, gender = ?, userType = "user"
 				where id = ?
 				""";
 		PreparedStatement preparedStatement = null;
@@ -156,15 +156,15 @@ public class Database {
 
 	ArrayList<Bus> selectBusesWithSeatsMoreThan(int number) throws SQLException {
 		final String queryString = """
-				select bs.id, bs.bus_type, bs.total_seats, count(*)
+				select bs.id, bs.bus_type, bs.total_seats, count(bk.id)
 				from buses bs
-				join bookings bk
+				left join bookings bk 
 				on bk.bus_id  = bs.id
 				group by bs.id
-				having bs.total_seats > count(*) + ?
+				having bs.total_seats > count(*) + ?;
 				""";
 		PreparedStatement preparedStatement = null;
-		ArrayList<Bus> availableBuses = new ArrayList<Bus>();
+		ArrayList<Bus> availableBuses = new ArrayList<>();
 		try {
 			preparedStatement = connection.prepareStatement(queryString);
 			preparedStatement.setInt(1, number);
@@ -321,7 +321,7 @@ public class Database {
 		}
 	}
 
-	void bookTicket(int userId, int busId, int seat, String name, char gender, boolean coPassengerFemaleOnly)
+	void bookTicket(int userId, int busId, Passenger passenger)
 			throws SQLException {
 		final String queryString = """
 				insert into bookings(booked_by, bus_id, seat, name, gender, female_only)
@@ -332,13 +332,12 @@ public class Database {
 			preparedStatement = connection.prepareStatement(queryString);
 			preparedStatement.setInt(1, userId);
 			preparedStatement.setInt(2, busId);
-			preparedStatement.setInt(3, seat);
-			preparedStatement.setString(4, name);
-			preparedStatement.setString(5, String.valueOf(gender));
-			preparedStatement.setBoolean(6, coPassengerFemaleOnly);
+			preparedStatement.setInt(3, passenger.seat);
+			preparedStatement.setString(4, passenger.nameString);
+			preparedStatement.setString(5, String.valueOf(passenger.gender));
+			preparedStatement.setBoolean(6, passenger.coPassengerFemaleOnly);
 
 			int rowCount = preparedStatement.executeUpdate();
-			System.out.println("rows affected" + rowCount);
 
 		} finally {
 			if (preparedStatement != null) {
