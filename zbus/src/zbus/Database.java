@@ -23,7 +23,7 @@ public class Database {
 	void createTable() throws SQLException {
 
 		// create customers table if not exist
-		final String createCustomersTableQuery = """
+		String query = """
 				create table if not exists customers(
 				id int not null auto_increment,
 				name varchar(30) not null unique,
@@ -39,7 +39,109 @@ public class Database {
 
 		try {
 			statement = connection.createStatement();
-			statement.executeUpdate(createCustomersTableQuery);
+			statement.executeUpdate(query);
+
+		} finally {
+			if (statement != null)
+				statement.close();
+		}
+		
+		// create buses table if not exist
+		query = """
+				create table if not exists buses(
+				id int not null unique,
+				bus_type varchar(30) not null,
+				total_seats int not null,
+				seats_per_row_right int not null,
+				seats_per_row_left int not null,
+				primary key(id)
+				);
+				""";
+
+		try {
+			statement = connection.createStatement();
+			statement.executeUpdate(query);
+
+		} finally {
+			if (statement != null)
+				statement.close();
+		}
+		
+
+		// create values into buses table if not exist
+		query = """
+			insert ignore into buses(id, bus_type, total_seats, seats_per_row_right, seats_per_row_left)
+			values	(1, "AC Sleeper", 30, 2, 1),
+			(2, "AC Seater", 40, 3, 2),
+			(3, "Non-AC Sleeper", 30, 2, 1),
+			(4, "Non-AC Seater", 40, 3, 2)""";
+
+		try {
+			statement = connection.createStatement();
+			statement.executeUpdate(query);
+
+		} finally {
+			if (statement != null)
+				statement.close();
+		}
+		
+		// insert values into buses table if not exist
+		query = """
+			insert ignore into buses(id, bus_type, total_seats, seats_per_row_right, seats_per_row_left)
+			values	(1, "AC Sleeper", 30, 2, 1),
+			(2, "AC Seater", 40, 3, 2),
+			(3, "Non-AC Sleeper", 30, 2, 1),
+			(4, "Non-AC Seater", 40, 3, 2)""";
+
+		try {
+			statement = connection.createStatement();
+			statement.executeUpdate(query);
+
+		} finally {
+			if (statement != null)
+				statement.close();
+		}
+		
+		// create bookings table if not exist
+		query = """
+			create table if not exists bookings(
+			id int not null auto_increment,
+			booked_by int,
+			bus_id int not null,
+			seat int,
+			name varchar(30),
+			gender varchar(1),
+			female_only boolean,
+			unique(bus_id, seat),
+			primary key(id),
+			constraint booking_to_customer
+				foreign key(booked_by)
+				references customers(id)
+				on delete set null,
+			constraint booking_to_bus
+				foreign key(bus_id)
+				references buses(id) 
+				on delete cascade
+		)""";
+
+		try {
+			statement = connection.createStatement();
+			statement.executeUpdate(query);
+
+		} finally {
+			if (statement != null)
+				statement.close();
+		}
+		
+		// create cancelled bookings table if not exist
+		query = """
+			create table if not exists cancelled_bookings
+			select * from bookings 
+			where 3 = 2""";
+
+		try {
+			statement = connection.createStatement();
+			statement.executeUpdate(query);
 
 		} finally {
 			if (statement != null)
